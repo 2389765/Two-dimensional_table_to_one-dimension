@@ -106,7 +106,7 @@ class table_transform():
         value = value.astype(np.float64)
         value = value.round(decimals=self.D)
         value[dot_index] = '…'
-        value[dot_index] = '-'
+        value[corss_index] = '-'
         return value
         
     def get_sheet(self,value,loc):
