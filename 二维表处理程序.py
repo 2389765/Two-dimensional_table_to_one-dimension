@@ -86,12 +86,27 @@ class table_transform():
         
         # 处理的值
         value = self.df.iloc[:,loc_ind]
+        dot_index = value[value=='…'].index
+        value[dot_index] = np.nan
+        corss_index = value[value=='-'].index
+        value[corss_index] = np.nan
         if loc['计算方式'] != 0 :
+            # 当作为减数/除数的数不存在时，则所有的返回结果都应该是不存在
+            # 与不应存在的数做计算，结果是不应存在
+            if self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index in dot_index:
+                value[value.index] = '…'
+                value[dot_index] = '-'
+                return value
+            elif self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index in corss_index:
+                value[value.index] = '-'
+                return value
             value = self.calculate(self.df.iloc[:,[loc_ind,self.index_col]], loc['计算方式'], loc['比较行代码'])
         
         # 保存为D位的小数
         value = value.astype(np.float64)
         value = value.round(decimals=self.D)
+        value[dot_index] = '…'
+        value[dot_index] = '-'
         return value
         
     def get_sheet(self,value,loc):
@@ -109,13 +124,14 @@ class table_transform():
             if pd_dict[key] == '处理':
                 pd_dict[key] = list(self.df.iloc[:,self.index_col]) # 替换为对应的编码
                 
-                 # 对于做比较的情况，基准线的数据删除
+                # 对于做比较的情况，基准线的数据删除
                 if loc['计算方式'] == 2 or loc['计算方式'] == 3:
                     drop_index = pd_dict[key].index(loc['比较行代码'])
                     pd_dict[key].pop(drop_index)
-                    pd_dict["数值"].pop(drop_index)
+                    pd_dict["数值"].pop(drop_index)                
                 break
         
+
             
         res_pd = pd.DataFrame(pd_dict)
         res_pd.fillna(method='pad',inplace=True)
@@ -158,6 +174,7 @@ class table_transform():
             return series.iloc[:,0]-national_number
         else:
             return series.iloc[:,0]
+        
 
 if __name__ == '__main__':
     file_path = input("excel配置文件地址：")
