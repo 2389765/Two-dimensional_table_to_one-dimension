@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
-import json5
-import re
 import xlsxwriter
+from copy import deepcopy
 
 class table_transform():
     def __init__(self, file_path, D):
@@ -85,7 +84,7 @@ class table_transform():
         loc_ind = loc['列序号']-1  # 待处理的列
         
         # 处理的值
-        value = self.df.iloc[:,loc_ind]
+        value = deepcopy(self.df.iloc[:,loc_ind]) # 不改动原始的列的值
         dot_index = value[value=='…'].index
         value[dot_index] = np.nan
         corss_index = value[value=='-'].index
@@ -102,7 +101,7 @@ class table_transform():
             elif self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index[0] in list(corss_index):
                 value[value.index] = '-'
                 return value
-            value = self.calculate(self.df.iloc[:,[loc_ind,self.index_col]], loc['计算方式'], loc['比较行代码'])
+            value = self.calculate(pd.concat([value,self.df.iloc[:,self.index_col]],axis=1), loc['计算方式'], loc['比较行代码'])
         
         # 保存为D位的小数
         value = value.astype(np.float64)
