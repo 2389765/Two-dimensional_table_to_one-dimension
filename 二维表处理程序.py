@@ -69,8 +69,8 @@ class table_transform():
         self.df = self.df[self.df.iloc[:,index_col].map(lambda x: x in self.ID)]
         self.df.iloc[:,index_col] = self.df.iloc[:,index_col].map(lambda x: self.ID[x])
         
-        # 将空值设为0
-        self.df.fillna(0,inplace=True)
+        # 将空值设为 - （空值应当表示excel计算存在问题）
+        self.df.fillna('-',inplace=True)
         
         self.res_pd = pd.DataFrame
         return   
@@ -93,11 +93,13 @@ class table_transform():
         if loc['计算方式'] != 0 :
             # 当作为减数/除数的数不存在时，则所有的返回结果都应该是不存在
             # 与不应存在的数做计算，结果是不应存在
-            if self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index in dot_index:
+            ## 包含‘...’和‘-’的index可能有多个，将Int64Index([], dtype='int64')格式改为[]
+            ## 比较的行只有一行，对应的列里这一行应只出现一次，所以将Int64Index([], dtype='int64')改为int
+            if self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index[0] in list(dot_index):
                 value[value.index] = '…'
                 value[dot_index] = '-'
                 return value
-            elif self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index in corss_index:
+            elif self.df[self.df.iloc[:,self.index_col] == loc['比较行代码']].index[0] in list(corss_index):
                 value[value.index] = '-'
                 return value
             value = self.calculate(self.df.iloc[:,[loc_ind,self.index_col]], loc['计算方式'], loc['比较行代码'])
@@ -106,7 +108,7 @@ class table_transform():
         value = value.astype(np.float64)
         value = value.round(decimals=self.D)
         value[dot_index] = '…'
-        value[corss_index] = '-'
+        value[dot_index] = '-'
         return value
         
     def get_sheet(self,value,loc):
